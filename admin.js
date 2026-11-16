@@ -71,7 +71,7 @@ function render(){
   var leads = D.lf === "aktywne" ? D.leads.filter(function(l){ return l.status === "nowe" || l.status === "w_kontakcie" || l.status === "oplacone"; }) : D.leads;
   h += '<div class="card"><span class="eyebrow">Zgłoszenia ze strony</span><div style="display:flex;gap:8px"><button class="btn slim ' + (D.lf === "aktywne" ? "" : "line") + '" data-lf="aktywne" type="button">Do obsłużenia</button><button class="btn slim ' + (D.lf === "wszystkie" ? "" : "line") + '" data-lf="wszystkie" type="button">Wszystkie (' + D.leads.length + ')</button></div>' +
     (leads.length ? leads.map(leadCard).join("") : '<p class="note">Brak zgłoszeń do obsłużenia.</p>') +
-    '<p class="note">„Opłacone, daj dostęp” dopisuje e-mail do listy dostępu i wysyła mail powitalny z linkiem do aplikacji.</p></div>';
+    '<p class="note">„Opłacone, daj dostęp” dopisuje e-mail do listy dostępu i wysyła mail powitalny z linkiem do aplikacji. „Opłacone, wyślij przewodnik” wysyła PDF mailem w załączniku. Kto kupił przewodnik, płaci za program 50 zł zamiast 87 zł.</p></div>';
 
   // lista dostępu
   h += '<div class="card"><span class="eyebrow">Lista dostępu · kto może się zalogować</span>' +
@@ -104,18 +104,22 @@ function render(){
   m.querySelectorAll("[data-st]").forEach(function(s){ s.onchange = function(){ setLead(+s.dataset.st, { status: s.value }); }; });
   m.querySelectorAll("[data-note]").forEach(function(t){ t.onchange = function(){ setLead(+t.dataset.note, { notatka: t.value.trim() || null }); }; });
   m.querySelectorAll("[data-give]").forEach(function(b){ b.onclick = function(){ give(+b.dataset.give, b.dataset.mail !== "0", b); }; });
+  m.querySelectorAll("[data-pdf]").forEach(function(b){ b.onclick = function(){ sendPdf(+b.dataset.pdf, b); }; });
   m.querySelectorAll("[data-acc]").forEach(function(b){ b.onclick = function(){ revoke(b.dataset.acc, b.dataset.rev === "1"); }; });
   $("accForm").onsubmit = function(e){ e.preventDefault(); addAcc($("accEmail").value, $("accName").value); };
   $("meetForm").onsubmit = saveMeet;
 }
 function leadCard(l){
   var onList = D.acc.some(function(a){ return a.email === String(l.email).toLowerCase() && !a.revoked_at; });
-  return '<div class="lead"><div class="row"><b style="font-size:16px">' + esc(l.imie) + '</b><span class="tag">' + (STATUS[l.status] || l.status) + '</span>' + (onList ? '<span class="tag ok">ma dostęp</span>' : "") + '<span class="note">' + d(l.created_at) + (l.zrodlo ? " · " + esc(l.zrodlo) : "") + '</span></div>' +
+  var pdf = l.oferta === "przewodnik";
+  return '<div class="lead"><div class="row"><b style="font-size:16px">' + esc(l.imie) + '</b>' + (pdf ? '<span class="tag" style="background:#FFF4E5;color:#A15C00">Przewodnik PDF · 37 zł</span>' : '<span class="tag" style="background:#E3F6CF;color:#2F5A08">Program · 87 zł</span>') + '<span class="tag">' + (STATUS[l.status] || l.status) + '</span>' + (!pdf && onList ? '<span class="tag ok">ma dostęp</span>' : "") + '<span class="note">' + d(l.created_at) + (l.zrodlo ? " · " + esc(l.zrodlo) : "") + '</span></div>' +
     '<div class="row"><a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a>' + (l.telefon ? ' · <a href="tel:' + esc(String(l.telefon).replace(/\s/g, "")) + '"><b>' + esc(l.telefon) + '</b></a>' : "") + (l.profil ? ' · ' + esc(l.profil) : "") + '</div>' +
     '<div class="note">' + [l.ile_dziennie ? "Dziennie: " + esc(l.ile_dziennie) : "", l.jak_dlugo ? "Od: " + esc(l.jak_dlugo) : ""].filter(Boolean).join(" · ") + '</div>' +
     (l.wiadomosc ? '<div style="color:var(--body);line-height:1.5">„' + esc(l.wiadomosc) + '”</div>' : "") +
     '<div class="row"><select data-st="' + l.id + '" aria-label="Status">' + Object.keys(STATUS).map(function(k){ return '<option value="' + k + '"' + (l.status === k ? " selected" : "") + '>' + STATUS[k] + '</option>'; }).join("") + '</select>' +
-    (l.status !== "wyslany_dostep" ? '<button class="btn lime slim" type="button" data-give="' + l.id + '">Opłacone, daj dostęp</button><button class="btn line slim" type="button" data-give="' + l.id + '" data-mail="0">Dostęp bez maila</button>' : "") + '</div>' +
+    (l.status === "wyslany_dostep" ? "" : pdf
+      ? '<button class="btn lime slim" type="button" data-pdf="' + l.id + '">Opłacone, wyślij przewodnik</button>'
+      : '<button class="btn lime slim" type="button" data-give="' + l.id + '">Opłacone, daj dostęp</button><button class="btn line slim" type="button" data-give="' + l.id + '" data-mail="0">Dostęp bez maila</button>') + '</div>' +
     '<input type="text" data-note="' + l.id + '" placeholder="Notatka (np. zadzwonić w piątek)" value="' + esc(l.notatka) + '" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px"></div>';
 }
 
@@ -124,6 +128,24 @@ async function setLead(id, patch){
   var r = await sb.from("zgloszenia_palenie").update(patch).eq("id", id);
   if (r.error) return toast("Nie zapisano: " + r.error.message);
   var l = D.leads.find(function(x){ return x.id === id; }); Object.assign(l, patch); toast("Zapisane"); if (patch.status) render();
+}
+async function callFn(body){
+  var s = (await sb.auth.getSession()).data.session;
+  var r = await fetch(C.SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/platnosci", {
+    method: "POST", headers: { "Content-Type": "application/json", "apikey": C.SUPABASE_KEY, "Authorization": "Bearer " + s.access_token },
+    body: JSON.stringify(body)
+  });
+  var j = await r.json().catch(function(){ return {}; });
+  return { ok: r.ok, status: r.status, j: j };
+}
+async function sendPdf(id, btn){
+  if (!window.confirm("Wysłać przewodnik PDF mailem? Zrób to dopiero po otrzymaniu płatności.")) return;
+  btn.disabled = true;
+  try {
+    var x = await callFn({ action: "przewodnik", id: id });
+    if (!x.ok || !x.j.ok) { btn.disabled = false; return toast("Nie wysłano: " + (x.j.error || x.j.mailErr || x.status) + (x.j.msg ? " " + x.j.msg : "")); }
+    toast("Przewodnik wysłany mailem."); await load(); render();
+  } catch (e) { btn.disabled = false; toast("Błąd połączenia z funkcją „platnosci”."); }
 }
 async function give(id, mail, btn){
   btn.disabled = true;
