@@ -83,7 +83,7 @@ function render(){
   var leads = D.lf === "aktywne" ? D.leads.filter(function(l){ return l.status === "nowe" || l.status === "w_kontakcie" || l.status === "oplacone"; }) : D.leads;
   h += '<div class="card"><span class="eyebrow">Zgłoszenia ze strony</span><div style="display:flex;gap:8px"><button class="btn slim ' + (D.lf === "aktywne" ? "" : "line") + '" data-lf="aktywne" type="button">Do obsłużenia</button><button class="btn slim ' + (D.lf === "wszystkie" ? "" : "line") + '" data-lf="wszystkie" type="button">Wszystkie (' + D.leads.length + ')</button></div>' +
     (leads.length ? leads.map(leadCard).join("") : '<p class="note">Brak zgłoszeń do obsłużenia.</p>') +
-    '<p class="note">„Opłacone, daj dostęp” dopisuje e-mail do listy dostępu i wysyła mail powitalny z linkiem do aplikacji. „Opłacone, wyślij przewodnik” wysyła PDF mailem w załączniku. Kto kupił przewodnik, płaci za program 50 zł zamiast 87 zł.</p></div>';
+    '<p class="note">„Opłacone, daj dostęp” dopisuje e-mail do listy dostępu i wysyła mail powitalny z linkiem do aplikacji. „Opłacone, wyślij przewodnik” wysyła PDF mailem w załączniku. Kto kupił przewodnik, płaci za program 30 zł zamiast 49 zł.</p></div>';
 
   // lista dostępu
   h += '<div class="card"><span class="eyebrow">Lista dostępu · kto może się zalogować</span>' +
@@ -124,7 +124,7 @@ function render(){
 function leadCard(l){
   var onList = D.acc.some(function(a){ return a.email === String(l.email).toLowerCase() && !a.revoked_at; });
   var pdf = l.oferta === "przewodnik";
-  return '<div class="lead"><div class="row"><b style="font-size:16px">' + esc(l.imie) + '</b>' + (pdf ? '<span class="tag" style="background:#FFF4E5;color:#A15C00">Przewodnik PDF · 37 zł</span>' : '<span class="tag" style="background:#E3F6CF;color:#2F5A08">Program · 87 zł</span>') + '<span class="tag">' + (STATUS[l.status] || l.status) + '</span>' + (!pdf && onList ? '<span class="tag ok">ma dostęp</span>' : "") + '<span class="note">' + d(l.created_at) + (l.zrodlo ? " · " + esc(l.zrodlo) : "") + '</span></div>' +
+  return '<div class="lead"><div class="row"><b style="font-size:16px">' + esc(l.imie) + '</b>' + (pdf ? '<span class="tag" style="background:#FFF4E5;color:#A15C00">Przewodnik PDF · 19 zł</span>' : '<span class="tag" style="background:#E3F6CF;color:#2F5A08">Program · 49 zł</span>') + '<span class="tag">' + (STATUS[l.status] || l.status) + '</span>' + (!pdf && onList ? '<span class="tag ok">ma dostęp</span>' : "") + '<span class="note">' + d(l.created_at) + (l.zrodlo ? " · " + esc(l.zrodlo) : "") + '</span></div>' +
     '<div class="row"><a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a>' + (l.telefon ? ' · <a href="tel:' + esc(String(l.telefon).replace(/\s/g, "")) + '"><b>' + esc(l.telefon) + '</b></a>' : "") + (l.profil ? ' · ' + esc(l.profil) : "") + '</div>' +
     '<div class="note">' + [l.ile_dziennie ? "Dziennie: " + esc(l.ile_dziennie) : "", l.jak_dlugo ? "Od: " + esc(l.jak_dlugo) : ""].filter(Boolean).join(" · ") + '</div>' +
     (l.wiadomosc ? '<div style="color:var(--body);line-height:1.5">„' + esc(l.wiadomosc) + '”</div>' : "") +
