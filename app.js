@@ -27,6 +27,30 @@ var LESSONS = [
    key:["Idealny moment nie przyjdzie. Najlepszy jest teraz.","Lekkie, puste uczucie w pierwszych dniach to umierający potwór.","Jesteś wolny w chwili, w której gasisz ostatniego papierosa."],
    ex:"Odpowiedz szczerze: czy jesteś pewny, że chcesz być wolny od nikotyny? Kiedy myślisz o ostatnim papierosie, czujesz bardziej smutek czy ekscytację?"}
 ];
+/* Dni 8 do 28: krótka wiadomość codziennie po dniu zero. Pliki: audio/dzien-8.mp3 do dzien-28.mp3 */
+var DAYS = {
+  8:["Pierwszy poranek","Przy pierwszej myśli o nikotynie powiedz w myślach: „Hurra, jestem wolny”."],
+  9:["Nie licz godzin","Zajrzyj raz do licznika i zobacz, ile już zostało w Twojej kieszeni."],
+  10:["Kawa","Wypij poranną kawę tam, gdzie zwykle paliłeś. Zauważ, że niczego jej nie brakuje."],
+  11:["Stres","Kiedy dziś poczujesz stres, zrób trzy spokojne oddechy i zobacz, że przechodzi bez nikotyny."],
+  12:["Głód słabnie","Zapisz jedną rzecz, która jest dziś łatwiejsza niż pierwszego dnia."],
+  13:["Weekend i alkohol","Zanim wyjdziesz na imprezę, powiedz sobie: „nie ma tylko jednego”."],
+  14:["Tydzień wolności","Wróć do zdania z lekcji 1, w którym zapisałeś, czego się boisz. Ile z tego się sprawdziło?"],
+  15:["Sen o papierosie","Jeśli śnił Ci się papieros, zapisz, co poczułeś po przebudzeniu."],
+  16:["Ktoś częstuje","Powiedz dziś na głos, choćby do siebie: „nie, dzięki, nie palę”."],
+  17:["Wieczór i nuda","Zauważ dziś jedną nudną chwilę i przejdź przez nią bez niczego w rękach."],
+  18:["Zły dzień","Jeśli dziś jest zły dzień, nazwij jego prawdziwy powód jednym zdaniem."],
+  19:["Jedzenie","Zanim dziś sięgniesz po przekąskę, zapytaj siebie: jestem głodny czy coś zapełniam?"],
+  20:["Patrzysz na palaczy","Gdy dziś zobaczysz palacza, zauważ, czy czujesz zazdrość, czy ulgę, że to już nie Ty."],
+  21:["Dwa tygodnie","Dokończ zdanie: „Nie wezmę nawet jednego, bo…”."],
+  22:["Auto i telefon","Zauważ dziś jeden stary odruch i powiedz w myślach: „to tylko automat”."],
+  23:["Pieniądze","Zdecyduj, na co wydasz pieniądze z pierwszego miesiąca wolności."],
+  24:["„To tylko saszetka”","Jeśli w domu albo w aucie zostało coś z nikotyną, oddaj to albo wyrzuć dziś."],
+  25:["Smak, węch i energia","Zapisz jedną rzecz, którą czujesz lepiej niż miesiąc temu."],
+  26:["Bliscy","Spędź dziś z kimś bliskim czas, który wcześniej zabierała Ci nikotyna."],
+  27:["Nie czekaj na olśnienie","Wieczorem sprawdź, ile razy dziś w ogóle pomyślałeś o nikotynie."],
+  28:["Trzy tygodnie wolności","Napisz krótką wiadomość do siebie sprzed miesiąca. Co byś mu powiedział?"]
+};
 var FORMS = {
   pap:{label:"Papierosy", q:"Ile papierosów dziennie?", unit:"niezapalonych papierosów", min:5},
   vape:{label:"E-papieros", q:"Ile razy dziennie sięgasz po e-papierosa?", unit:"razy bez e-papierosa", min:5},
@@ -54,6 +78,9 @@ function nicName(){ var f = formy(); return f.length > 1 ? "nikotyny" : {pap:"pa
 function unitStats(days){ return formy().map(function(f){ return '<div class="stat"><b>' + Math.floor(days * ile(f)) + '</b><span>' + FORMS[f].unit + '</span></div>'; }).join(""); }
 function fmtZl(v){ return Math.round(v).toLocaleString("pl-PL") + " zł"; }
 function zeroAt(){ return S.P && S.P.zero_at ? new Date(S.P.zero_at).getTime() : null; }
+/* Dzień programu po dniu zero, liczony po dacie kalendarzowej: dzień zero = 7, następny ranek = 8. */
+function calDays(){ var z = zeroAt(); if (!z) return null; var a = new Date(z), b = new Date(); a.setHours(12,0,0,0); b.setHours(12,0,0,0); return Math.max(0, Math.round((b - a) / 86400000)); }
+function progDay(){ var c = calDays(); return c === null ? null : 7 + c; }
 function since(){ var z = zeroAt(); if (!z) return null; var ms = Date.now() - z; return {ms:ms, days: ms/86400000}; }
 function icon(name){
   var p = {
@@ -220,9 +247,17 @@ function vDzis(){
     h += '<h1>Jesteś <em>wolny.</em></h1>';
     h += '<div class="card dark"><span class="eyebrow">Jesteś wolny od</span><div style="display:flex;align-items:baseline;gap:10px"><span style="font:400 64px/0.9 var(--serif)">' + days + '</span><span style="font-weight:700;font-size:18px">' + (days === 1 ? "dnia" : "dni") + '</span></div>' +
          '<div class="stats" style="margin-top:4px"><div class="stat" style="background:rgba(255,255,255,.08);border:0"><b style="font-size:28px;font-family:var(--sans);font-weight:800">' + Math.floor(d.days * perDayAll()) + '</b><span style="color:#CFCBF7">razy bez ' + nicName() + '</span></div><div class="stat" style="background:rgba(255,255,255,.08);border:0"><b style="font-size:28px;font-family:var(--sans);font-weight:800;color:var(--lime)">' + fmtZl(d.days * tydz() / 7) + '</b><span style="color:#CFCBF7">zostało w kieszeni</span></div></div></div>';
-    h += '<div class="card"><span class="eyebrow">Na dziś</span><h2>' + (days < 5 ? "Mały potwór właśnie umiera" : "Nic Ci nie brakuje") + '</h2><p style="line-height:1.6;color:var(--body)">' +
-         (days < 5 ? "Lekkie, puste uczucie może się jeszcze pojawiać. To nie Ty go potrzebujesz, to potwór, którego przestałeś karmić. Kiedy przyjdzie, pomyśl: „Hurra, jestem wolny”." : "Jeśli przy kawie albo w aucie wraca stara myśl, to tylko skojarzenie. Nie walcz z nim. Uśmiechnij się i idź dalej.") + '</p>' +
-         '<p class="note">Codzienne wiadomości na kolejne dni pojawią się tu wkrótce.</p></div>';
+    var pd = progDay();
+    if (pd === 7) {
+      h += '<div class="card"><span class="eyebrow">Na dziś</span><h2>Mały potwór właśnie umiera</h2><p style="line-height:1.6;color:var(--body)">Lekkie, puste uczucie może się jeszcze pojawiać. To nie Ty go potrzebujesz, to potwór, którego przestałeś karmić. Kiedy przyjdzie, pomyśl: „Hurra, jestem wolny”.</p><p class="note">Jutro rano czeka tu na Ciebie pierwsza krótka wiadomość.</p></div>';
+    } else if (DAYS[pd]) {
+      h += '<div class="card dark"><span class="eyebrow">Wiadomość dnia · dzień ' + pd + ' · ok. 40 s</span><h2 style="color:#fff">' + esc(DAYS[pd][0]) + '</h2><a class="btn lime" style="align-self:flex-start" href="#/dzien/' + pd + '">' + icon("play") + 'Posłuchaj</a></div>';
+      h += '<div class="card"><span class="eyebrow">Zadanie na dziś</span><p style="font-weight:700;line-height:1.4">' + esc(DAYS[pd][1]) + '</p></div>';
+      h += '<a class="btn line block" href="#/lekcje">Wszystkie wiadomości</a>';
+    } else {
+      h += '<div class="card"><span class="eyebrow">Na dziś</span><h2>Trzy tygodnie za Tobą</h2><p style="line-height:1.6;color:var(--body)">Okres oczyszczania minął. Od teraz wiadomości przychodzą raz w tygodniu. Pamiętaj jedno: nie ma „tylko jednego”.</p></div>';
+      h += '<a class="btn line block" href="#/lekcje">Wszystkie wiadomości</a>';
+    }
     h += '<button class="btn line block" data-go="#/zero">Posłuchaj jeszcze raz nagrania z dnia zero</button>';
   } else if (nx) {
     var day = nx.n;
@@ -251,6 +286,11 @@ function vLekcje(){
   }).join("");
   var zeroOpen = doneCount() === 7 || !!zeroAt();
   h += (zeroOpen ? '<a href="#/zero" style="text-decoration:none">' : "<div>") + '<div class="card dark" style="flex-direction:row;align-items:center;gap:12px;padding:14px"><span style="flex:none;width:32px;height:32px;border-radius:50%;background:var(--lime);color:var(--lime-ink);display:flex;align-items:center;justify-content:center;font-weight:800">0</span><span><b style="display:block">Dzień zero: ostatni papieros</b><small class="muted">' + (zeroAt() ? "Za Tobą. Jesteś wolny." : (zeroOpen ? "Gotowy, kiedy Ty jesteś gotowy" : "Odblokuje się po 7 lekcjach")) + '</small></span></div>' + (zeroOpen ? "</a>" : "</div>");
+  var pdl = progDay();
+  if (pdl !== null && pdl >= 8) {
+    h += '<span class="eyebrow" style="margin-top:8px">Etap 2 · dni 8 do 28 · wiadomość dnia</span>';
+    for (var dn = Math.min(pdl, 28); dn >= 8; dn--) h += '<a class="lesson' + (dn === pdl ? " now" : " done") + '" style="text-decoration:none;color:inherit" href="#/dzien/' + dn + '"><span class="n">' + dn + '</span><span><b>Dzień ' + dn + '. ' + esc(DAYS[dn][0]) + '</b><small>' + (dn === pdl ? "Wiadomość na dziś" : "Posłuchaj jeszcze raz") + '</small></span></a>';
+  }
   h += '<div class="stats"><div class="stat"><span class="eyebrow" style="font-size:11px">Dni 8 do 28</span><b style="font-size:24px;margin-top:6px">Oczyszczanie</b><span>Krótka wiadomość codziennie</span></div><div class="stat"><span class="eyebrow" style="font-size:11px">Dni 29 do 90</span><b style="font-size:24px;margin-top:6px">Wolność</b><span>Wiadomość raz w tygodniu</span></div></div>';
   app.innerHTML = '<main>' + h + '</main>' + fab() + tabs("lekcje");
 }
@@ -271,6 +311,20 @@ function bindPlayer(src){
   bar.onkeydown = function(e){ if (e.key === "ArrowRight") au.currentTime += 10; if (e.key === "ArrowLeft") au.currentTime -= 10; };
   au.onplay = au.onpause = ui; au.ontimeupdate = au.onloadedmetadata = prog; au.onended = ui;
   ui();
+}
+
+function vDzien(n){
+  var pd = progDay(), d = DAYS[n];
+  if (!d || pd === null || n > pd) return go("#/dzis");
+  var h = '<div class="top"><button class="back" type="button" data-go="#/dzis" aria-label="Wróć">' + icon("back") + '</button><span class="pill">DZIEŃ ' + n + ' Z 28</span></div>';
+  h += '<h1>' + esc(d[0]) + '</h1>';
+  h += player("Dzień " + n + ": " + d[0]);
+  h += '<div class="card"><span class="eyebrow">Zadanie na dziś</span><p style="font-weight:700;line-height:1.4">' + esc(d[1]) + '</p>' +
+       '<label class="f" style="font-weight:500;color:var(--muted)">Twoja notatka (widzisz ją tylko Ty)<textarea id="nt" rows="3" maxlength="2000">' + esc(S.notes[n]) + '</textarea></label></div>';
+  h += '<a class="btn line block" href="#/dzis">Wróć do dziś</a>';
+  app.innerHTML = '<main>' + h + '</main>' + fab() + tabs("dzis");
+  bindPlayer("audio/dzien-" + n + ".mp3");
+  var nt = document.getElementById("nt"); nt.oninput = function(){ saveNote(n, nt.value); };
 }
 
 function vLekcja(n){
@@ -398,12 +452,13 @@ function render(){
   if (!S.user || !S.P) return;
   var r = (location.hash || "").replace(/^#\/?/, "").split("/");
   if (!S.P.consent_health && r[0] !== "start") return go("#/start");
-  if (r[0] !== "lekcja" && r[0] !== "zero") au.pause();
+  if (r[0] !== "lekcja" && r[0] !== "zero" && r[0] !== "dzien") au.pause();
   switch (r[0]) {
     case "start": vStart(); break;
     case "lekcje": vLekcje(); break;
     case "lekcja": vLekcja(+r[1]); break;
     case "zero": vZero(); break;
+    case "dzien": vDzien(+r[1]); break;
     case "licznik": vLicznik(); break;
     case "chce": vChce(); break;
     case "wiecej": vWiecej(); break;
