@@ -83,3 +83,17 @@ nav.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2
 .legal a{color:var(--muted)}
 .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--muted)}
 .code-input{font-size:28px!important;letter-spacing:.4em;text-align:center;font-weight:800}
+.sos-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card.tool{text-decoration:none;color:var(--ink);gap:2px;padding:16px;margin:0}
+.card.tool b{font:400 24px/1.1 var(--serif)}
+.card.tool span{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{min-height:42px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:14px;cursor:pointer;color:var(--ink)}
+.chips button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chips button:disabled:not(.on){opacity:.5}
+.breath{position:relative;width:min(78vw,300px);aspect-ratio:1;margin:18px auto 6px;display:grid;place-items:center}
+.breath .ring{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 40%,var(--lime),#9FD63A 70%);box-shadow:0 0 0 14px rgba(200,242,92,.25),0 20px 50px -20px rgba(63,107,10,.6);transform:scale(.55);transition:transform .6s ease-in-out}
+.breath .lbl{position:relative;text-align:center;display:grid;gap:4px;color:var(--lime-ink)}
+.breath .lbl b{font:400 30px/1.1 var(--serif)}
+.breath .lbl span{font-weight:800;font-size:22px}
+@media (prefers-reduced-motion:reduce){.breath .ring{transition:none!important}}

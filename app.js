@@ -104,7 +104,7 @@ function tabs(on){
     return '<a href="#/' + x[0] + '" class="' + (on === x[0] ? "on" : "") + '"' + (on === x[0] ? ' aria-current="page"' : "") + '><svg viewBox="0 0 24 24" aria-hidden="true">' + x[2] + '</svg>' + x[1] + '</a>';
   }).join("") + '</div></nav>';
 }
-function fab(){ return zeroAt() ? '<a class="btn lime fab" href="#/chce">' + icon("heart") + 'Chcę zapalić</a>' : ""; }
+function fab(){ return zeroAt() ? '<a class="btn lime fab" href="#/chce">' + icon("heart") + 'SOS · chcę zapalić</a>' : ""; }
 function header(pill){
   return '<div class="top"><div class="brand"><img src="icon-192.png" alt="">' + (S.P && S.P.imie ? "Cześć, " + esc(S.P.imie) : "Wolne Płuco") + '</div>' + (pill ? '<span class="pill">' + pill + '</span>' : "") + '</div>';
 }
@@ -303,8 +303,8 @@ function mmss(s){ s = Math.max(0, Math.floor(s || 0)); return Math.floor(s/60) +
 function bindPlayer(src){
   au.pause(); au.src = src; au.playbackRate = 1;
   var pp = document.getElementById("pp"), sp = document.getElementById("sp"), bar = document.getElementById("bar"), fill = document.getElementById("fill");
-  function ui(){ pp.innerHTML = icon(au.paused ? "play" : "pause"); pp.setAttribute("aria-label", au.paused ? "Odtwórz" : "Pauza"); }
-  function prog(){ var p = au.duration ? au.currentTime / au.duration * 100 : 0; fill.style.width = p + "%"; bar.setAttribute("aria-valuenow", Math.round(p)); document.getElementById("cur").textContent = mmss(au.currentTime); document.getElementById("dur").textContent = mmss(au.duration); }
+  function ui(){ if (!document.body.contains(pp)) return; pp.innerHTML = icon(au.paused ? "play" : "pause"); pp.setAttribute("aria-label", au.paused ? "Odtwórz" : "Pauza"); }
+  function prog(){ if (!document.body.contains(fill)) return; var p = au.duration ? au.currentTime / au.duration * 100 : 0; fill.style.width = p + "%"; bar.setAttribute("aria-valuenow", Math.round(p)); document.getElementById("cur").textContent = mmss(au.currentTime); document.getElementById("dur").textContent = mmss(au.duration); }
   pp.onclick = function(){ if (au.paused) au.play().catch(function(){}); else au.pause(); };
   sp.onclick = function(){ var r = au.playbackRate === 1 ? 1.25 : (au.playbackRate === 1.25 ? 1.5 : 1); au.playbackRate = r; sp.textContent = String(r).replace(".", ",") + "×"; };
   bar.onclick = function(e){ var r = bar.getBoundingClientRect(); if (au.duration) au.currentTime = (e.clientX - r.left) / r.width * au.duration; };
@@ -399,15 +399,104 @@ function vLicznik(){
   app.innerHTML = '<main>' + h + '</main>' + fab() + tabs("licznik");
 }
 
+var TRIG = [["kawa","Kawa"],["stres","Stres"],["alkohol","Alkohol"],["nuda","Nuda"],["auto","Auto"],["jedzenie","Po jedzeniu"],["inni","Ktoś pali obok"],["inne","Coś innego"]];
 function vChce(){
-  au.pause();
-  app.innerHTML = '<main class="urge"><div class="top"><span></span><button class="back" type="button" data-go="#/dzis" aria-label="Zamknij">' + icon("x") + '</button></div>' +
-    '<span class="eyebrow" style="color:#3F6B0A;margin-top:30px">To uczucie to nie Ty</span><h1 style="font-size:42px">To tylko mały potwór <em>dogorywa.</em></h1>' +
-    '<p style="font-size:17px;line-height:1.6;color:var(--body)">Ta myśl przyszła, bo przez lata kawa, stres albo przerwa kojarzyły się z nikotyną. Nic nie tracisz. Papieros, buch czy saszetka niczego Ci dziś nie dadzą.</p>' +
-    '<div class="card"><span class="note">Powiedz w myślach:</span><p style="font:400 30px/1.1 var(--serif)">„Hurra, jestem wolny.”</p></div>' +
-    '<button class="btn block" type="button" data-go="#/dzis" style="background:var(--ink)">Hurra, jestem wolny</button>' +
-    '<a class="btn line block" href="#/lekcja/6">Posłuchaj lekcji o pułapkach</a>' +
-    '<p class="note" style="text-align:center">Potrzebujesz rozmowy? Poradnia dla palących: <a href="tel:801108108"><b>801 108 108</b></a></p></main>';
+  var h = '<div class="top"><span class="pill">SOS</span><button class="back" type="button" data-go="#/dzis" aria-label="Zamknij">' + icon("x") + '</button></div>' +
+    '<span class="eyebrow" style="color:#3F6B0A;margin-top:6px">To fala. Minie za kilka minut</span><h1 style="font-size:38px">Zatrzymaj się <em>na minutę.</em></h1>';
+  h += player("SOS: fala");
+  h += '<div class="sos-tools"><a class="card tool" href="#/oddech"><b>Oddech</b><span>1 minuta z kołem</span></a><a class="card tool" href="#/kotwica"><b>Kotwica</b><span>autohipnoza, 7 min</span></a></div>';
+  h += '<div class="card"><span class="note">Złącz kciuk z palcem wskazującym i powiedz w myślach:</span><p style="font:400 30px/1.1 var(--serif)">„Jestem wolny.”</p>' +
+       (S.P && S.P.postanowienie ? '<p class="note" style="margin-top:6px">Twoje postanowienie: <b style="color:var(--ink)">' + esc(S.P.postanowienie) + '</b></p>' : "") + '</div>';
+  h += '<div class="card" id="pass"><span class="eyebrow">Przeszło?</span><div class="seg" style="grid-template-columns:1fr 1fr"><button type="button" data-p="1">Tak, przeszło</button><button type="button" data-p="0">Jeszcze nie</button></div>' +
+       '<div id="trig" class="hidden"><p style="font-weight:700;margin-top:6px">Co wywołało tę falę?</p><div class="chips">' + TRIG.map(function(t){ return '<button type="button" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join("") + '</div></div>' +
+       '<p class="note hidden" id="more">Zrób jeszcze minutę oddechu. Fala słabnie z każdą minutą, nawet jeśli tego jeszcze nie czujesz. <a href="#/oddech">Oddech</a></p>' +
+       '<div id="sum" class="hidden"></div></div>';
+  h += '<p class="note" style="text-align:center">Potrzebujesz rozmowy? Poradnia dla palących: <a href="tel:801108108" style="white-space:nowrap"><b>801 108 108</b></a></p>';
+  app.innerHTML = '<main class="urge">' + h + '</main>';
+  bindPlayer("audio/sos.mp3");
+  au.play().catch(function(){});
+  var passed = null;
+  app.querySelectorAll("[data-p]").forEach(function(b){ b.onclick = function(){
+    passed = b.dataset.p === "1";
+    app.querySelectorAll("[data-p]").forEach(function(x){ x.classList.toggle("on", x === b); });
+    document.getElementById("trig").classList.remove("hidden");
+    document.getElementById("more").classList.toggle("hidden", passed);
+  }; });
+  app.querySelectorAll("[data-t]").forEach(function(b){ b.onclick = async function(){
+    app.querySelectorAll("[data-t]").forEach(function(x){ x.disabled = true; x.classList.toggle("on", x === b); });
+    var r = await sb.from("sos_events").insert({ user_id: S.user.id, przeszlo: passed, wyzwalacz: b.dataset.t });
+    if (r.error) { app.querySelectorAll("[data-t]").forEach(function(x){ x.disabled = false; }); return fail(r.error); }
+    sosSummary();
+  }; });
+}
+async function sosSummary(){
+  var box = document.getElementById("sum"); if (!box) return;
+  var since = new Date(Date.now() - 7 * 86400000).toISOString();
+  var r = await sb.from("sos_events").select("wyzwalacz,przeszlo,created_at").eq("user_id", S.user.id).gte("created_at", since);
+  var rows = (r && r.data) || [], c = {};
+  rows.forEach(function(x){ if (x.wyzwalacz) c[x.wyzwalacz] = (c[x.wyzwalacz] || 0) + 1; });
+  var top = Object.keys(c).sort(function(a, b){ return c[b] - c[a]; })[0];
+  var name = top ? TRIG.filter(function(t){ return t[0] === top; })[0][1].toLowerCase() : "";
+  box.innerHTML = '<p style="font-weight:700;margin-top:8px">Zapisane. Dobra robota.</p><p class="note">Ostatnie 7 dni: ' + rows.length + ' ' + (rows.length === 1 ? "fala" : (rows.length % 10 >= 2 && rows.length % 10 <= 4 && (rows.length % 100 < 10 || rows.length % 100 >= 20) ? "fale" : "fal")) +
+    (top && rows.length > 1 ? ', najczęściej: <b style="color:var(--ink)">' + esc(name) + '</b>. Kiedy wiesz, co uruchamia falę, łatwiej ją rozpoznać.' : ".") + '</p>' +
+    '<button class="btn block" type="button" data-go="#/dzis" style="background:var(--ink);margin-top:8px">Jestem wolny, wracam do dnia</button>';
+  box.classList.remove("hidden");
+}
+
+var BREATH = {
+  spokoj: { name: "Spokój", info: "Wdech 4 sekundy, wydech 6. Dłuższy wydech uspokaja.", steps: [["Wdech", 4, 1], ["Wydech", 6, 0]] },
+  kwadrat: { name: "Kwadrat", info: "4 sekundy wdech, 4 pauza, 4 wydech, 4 pauza. Dobre przy stresie.", steps: [["Wdech", 4, 1], ["Zatrzymaj", 4, 1], ["Wydech", 4, 0], ["Zatrzymaj", 4, 0]] },
+  podwojny: { name: "Podwójny wdech", info: "Dwa wdechy nosem, jeden długi wydech ustami. Najszybszy reset.", steps: [["Wdech nosem", 2, .8], ["Jeszcze trochę", 1, 1], ["Długi wydech ustami", 6, 0]] }
+};
+function vOddech(){
+  var k = S.breath || "spokoj", B = BREATH[k];
+  var back = zeroAt() ? "#/chce" : "#/wiecej";
+  var h = '<div class="top"><button class="back" type="button" data-go="' + back + '" aria-label="Wróć">' + icon("back") + '</button><span class="pill">ODDECH · 1 MIN</span></div>';
+  h += '<h1>Oddychaj <em>ze mną.</em></h1>';
+  h += '<div class="seg" role="group" aria-label="Rodzaj oddechu">' + Object.keys(BREATH).map(function(x){ return '<button type="button" data-b="' + x + '" class="' + (x === k ? "on" : "") + '">' + BREATH[x].name + '</button>'; }).join("") + '</div>';
+  h += '<p class="note" style="text-align:center">' + B.info + '</p>';
+  h += '<div class="breath"><div class="ring" id="ring"></div><div class="lbl"><b id="bl">Gotowy?</b><span id="bc"></span></div></div>';
+  h += '<p class="note" id="bt" style="text-align:center">Kliknij start. Telefon delikatnie zawibruje przy każdej zmianie.</p>';
+  h += '<button class="btn block" type="button" id="bgo">Start</button>';
+  app.innerHTML = '<main>' + h + '</main>';
+  app.querySelectorAll("[data-b]").forEach(function(b){ b.onclick = function(){ stopBreath(); S.breath = b.dataset.b; vOddech(); }; });
+  var ring = document.getElementById("ring"), bl = document.getElementById("bl"), bc = document.getElementById("bc"), bt = document.getElementById("bt"), go_ = document.getElementById("bgo");
+  go_.onclick = function(){
+    if (S.bt) { stopBreath(); bl.textContent = "Gotowy?"; bc.textContent = ""; ring.style.transitionDuration = ".6s"; ring.style.transform = "scale(.55)"; go_.textContent = "Start"; return; }
+    var total = 60, left = total, i = 0, t = 0;
+    go_.textContent = "Stop";
+    function step(){
+      var s = B.steps[i % B.steps.length];
+      bl.textContent = s[0]; t = s[1];
+      ring.style.transitionDuration = s[1] + "s"; ring.style.transform = "scale(" + (.55 + .45 * s[2]) + ")";
+      try { navigator.vibrate && navigator.vibrate(30); } catch(e){}
+      i++;
+    }
+    step(); bc.textContent = t;
+    S.bt = setInterval(function(){
+      if (!document.body.contains(ring)) return stopBreath();
+      left--; t--;
+      bt.textContent = "Zostało " + mmss(left);
+      if (left <= 0) {
+        stopBreath(); bl.textContent = "Gotowe"; bc.textContent = ""; ring.style.transitionDuration = "1s"; ring.style.transform = "scale(.55)";
+        bt.innerHTML = "Jak teraz? Możesz zrobić jeszcze jedną minutę.";
+        go_.textContent = "Jeszcze raz"; return;
+      }
+      if (t <= 0) step();
+      bc.textContent = t;
+    }, 1000);
+  };
+}
+function stopBreath(){ if (S.bt) { clearInterval(S.bt); S.bt = null; } }
+
+function vKotwica(){
+  var back = zeroAt() ? "#/chce" : "#/wiecej";
+  var h = '<div class="top"><button class="back" type="button" data-go="' + back + '" aria-label="Wróć">' + icon("back") + '</button><span class="pill">AUTOHIPNOZA · 7 MIN</span></div>';
+  h += '<h1>Kotwica <em>wolności</em></h1>';
+  h += player("Kotwica wolności");
+  h += '<div class="card"><span class="eyebrow">Jak słuchać</span><p style="line-height:1.6;color:var(--body)">Usiądź albo połóż się w spokojnym miejscu, najlepiej w słuchawkach. Przez pierwsze dni słuchaj raz dziennie. Nagranie ustawia gest: kciuk złączony z palcem wskazującym i „Jestem wolny”. Potem używasz go w każdej chwili, gdy przyjdzie fala.</p><p class="note"><b>Nie słuchaj podczas jazdy autem</b> ani przy pracy, która wymaga skupienia.</p></div>';
+  app.innerHTML = '<main>' + h + '</main>' + tabs("");
+  bindPlayer("audio/kotwica.mp3");
 }
 
 function meetCard(small){
@@ -423,8 +512,9 @@ function meetCard(small){
 function vWiecej(){
   var h = '<h1>Spotkania <em>i pomoc</em></h1>';
   h += meetCard(false);
+  h += '<div class="card"><span class="eyebrow">Ćwiczenia na trudną chwilę</span><p style="line-height:1.5;color:var(--body)">Możesz z nich korzystać w każdej chwili, także przed dniem zero.</p><div class="sos-tools"><a class="card tool" href="#/oddech"><b>Oddech</b><span>1 minuta z kołem</span></a><a class="card tool" href="#/kotwica"><b>Kotwica</b><span>autohipnoza, 7 min</span></a></div>' + (zeroAt() ? '<a class="btn line" style="align-self:flex-start" href="#/chce">Otwórz SOS</a>' : "") + '</div>';
   h += '<div class="card"><span class="eyebrow">Hipnoza 1:1</span><p style="line-height:1.5;color:var(--body)">Osobna sesja z Tomaszem, gdy chcesz pracy indywidualnej.</p><a class="btn line" style="align-self:flex-start" href="' + esc(C.INSTAGRAM_URL) + '" target="_blank" rel="noopener">Napisz w DM</a></div>';
-  h += '<div class="card"><span class="eyebrow">Pomoc</span><p style="line-height:1.5;color:var(--body)">Telefoniczna Poradnia Pomocy Palącym: <a href="tel:801108108"><b>801 108 108</b></a>. Jeśli jesteś w ciąży, masz chorobę serca lub płuc albo bierzesz leki, porozmawiaj o rzucaniu z lekarzem.</p></div>';
+  h += '<div class="card"><span class="eyebrow">Pomoc</span><p style="line-height:1.5;color:var(--body)">Telefoniczna Poradnia Pomocy Palącym: <a href="tel:801108108" style="white-space:nowrap"><b>801 108 108</b></a>. Jeśli jesteś w ciąży, masz chorobę serca lub płuc albo bierzesz leki, porozmawiaj o rzucaniu z lekarzem.</p></div>';
   if (zeroAt()) h += '<div class="card"><span class="eyebrow">Zapaliłem</span><p style="line-height:1.5;color:var(--body)">Nie ma „tylko jednego”, bo jeden papieros to powrót do pułapki. Posłuchaj jeszcze raz lekcji 6 i zacznij nowy dzień zero.</p><button class="btn line" style="align-self:flex-start" type="button" id="slip">Nowy dzień zero</button></div>';
   h += '<div class="card"><span class="eyebrow">Konto</span><p class="note">' + esc(S.user.email) + '<br>' + formy().map(function(f){ return FORMS[f].label.toLowerCase() + ": " + ile(f) + " dziennie"; }).join(", ") + ' · ' + fmtZl(tydz()) + ' tygodniowo</p>' +
        '<button class="btn line" style="align-self:flex-start" type="button" id="edit">Zmień dane</button>' +
@@ -452,7 +542,8 @@ function render(){
   if (!S.user || !S.P) return;
   var r = (location.hash || "").replace(/^#\/?/, "").split("/");
   if (!S.P.consent_health && r[0] !== "start") return go("#/start");
-  if (r[0] !== "lekcja" && r[0] !== "zero" && r[0] !== "dzien") au.pause();
+  stopBreath();
+  if (r[0] !== "lekcja" && r[0] !== "zero" && r[0] !== "dzien" && r[0] !== "chce" && r[0] !== "kotwica") au.pause();
   switch (r[0]) {
     case "start": vStart(); break;
     case "lekcje": vLekcje(); break;
@@ -460,7 +551,9 @@ function render(){
     case "zero": vZero(); break;
     case "dzien": vDzien(+r[1]); break;
     case "licznik": vLicznik(); break;
-    case "chce": vChce(); break;
+    case "chce": if (zeroAt()) vChce(); else go("#/oddech"); break;
+    case "oddech": vOddech(); break;
+    case "kotwica": vKotwica(); break;
     case "wiecej": vWiecej(); break;
     default: vDzis();
   }

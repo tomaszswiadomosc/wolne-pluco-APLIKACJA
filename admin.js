@@ -45,6 +45,8 @@ async function load(){
     sb.from("spotkania").select("*").eq("id", 1).maybeSingle()
   ]);
   D.leads = res[0]; D.acc = res[1]; D.users = res[2]; D.done = res[3]; D.land = res[4]; D.meet = res[5].data;
+  var ss = await Promise.all([7, 30, 90].map(function(n){ return sb.rpc("sos_stats", { p_days: n }); }));
+  D.sos = { 7: ss[0].data, 30: ss[1].data, 90: ss[2].data };
 }
 
 /* ---------- widok ---------- */
@@ -66,6 +68,16 @@ function render(){
   h += '<div class="kpis"><div class="stat"><b>' + users.length + '</b><span>uczestników</span></div><div class="stat"><b>' + free + '</b><span>po dniu zero</span></div><div class="stat"><b>' + avgL + '</b><span>średnio lekcji z 7</span></div><div class="stat lime"><b>' + newLeads + '</b><span>zgłoszeń do obsłużenia</span></div></div>';
   h += '<div class="card"><span class="eyebrow">Strona sprzedażowa · ostatnie ' + D.range + ' dni</span><div class="kpis"><div class="stat"><b>' + wej + '</b><span>wejść</span></div><div class="stat"><b>' + cnt("lekcja1") + '</b><span>odsłuchań lekcji 1</span></div><div class="stat"><b>' + cnt("dolaczam") + '</b><span>kliknięć „Dołączam”</span></div><div class="stat"><b>' + zap + '</b><span>zapisów' + (wej ? " (" + Math.round(zap / wej * 1000) / 10 + "%)" : "") + '</span></div></div>' +
     '<p class="note">' + (srcTxt || "Brak wejść w tym okresie.") + '</p><p class="note">Bez ciasteczek i bez adresu IP. Źródło: dopisek <b>?z=instagram</b> w linku albo strona, z której ktoś przyszedł.</p></div>';
+
+  // SOS: tylko liczby zbiorcze, bez imion
+  var SOSN = { kawa: "kawa", stres: "stres", alkohol: "alkohol", nuda: "nuda", auto: "auto", jedzenie: "po jedzeniu", inni: "ktoś pali obok", inne: "coś innego", brak: "bez odpowiedzi" };
+  var sos = (D.sos && D.sos[D.range]) || null;
+  if (sos) {
+    var sTot = sos.reduce(function(a, x){ return a + Number(x.ile); }, 0), sOk = sos.reduce(function(a, x){ return a + Number(x.przeszlo); }, 0);
+    h += '<div class="card"><span class="eyebrow">SOS · ostatnie ' + D.range + ' dni · zbiorczo, bez imion</span><div class="kpis"><div class="stat"><b>' + sTot + '</b><span>fal zapisanych</span></div><div class="stat"><b>' + (sTot ? Math.round(sOk / sTot * 100) : 0) + '%</b><span>„tak, przeszło”</span></div></div>' +
+      (sTot ? sos.map(function(x){ var pr = Math.round(Number(x.ile) / sTot * 100); return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:6px 0;border-top:1px solid #E6E4FC"><span>' + esc(SOSN[x.wyzwalacz] || x.wyzwalacz) + '</span><b>' + pr + '% · ' + x.ile + '</b></div>'; }).join("") : '<p class="note">Nikt jeszcze nie użył SOS w tym okresie.</p>') +
+      '<p class="note">Co najczęściej wywołuje falę u uczestników. Dobry temat na spotkanie na żywo albo post. Pojedynczych osób panel nie pokazuje.</p></div>';
+  }
 
   // zgłoszenia
   var leads = D.lf === "aktywne" ? D.leads.filter(function(l){ return l.status === "nowe" || l.status === "w_kontakcie" || l.status === "oplacone"; }) : D.leads;

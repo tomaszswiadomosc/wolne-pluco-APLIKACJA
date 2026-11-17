@@ -1,6 +1,6 @@
 // Service worker: instalacja aplikacji i szybsze otwieranie.
 // Dane zawsze idą z serwera; pliki aplikacji są w pamięci jako zapas na słaby internet.
-const CACHE = "wp-v2";
+const CACHE = "wp-v3";
 const FILES = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.json", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
